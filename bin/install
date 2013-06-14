@@ -8,9 +8,4 @@ cp -r ${OPENSHIFT_VERTX_DIR}/versions/${version}/template/* ${OPENSHIFT_VERTX_DI
 
 pushd ${OPENSHIFT_VERTX_DIR}/template
 
-git clone https://bdecoste:cyclone1@github.com/projectodd/keynote-demo-2013.git
-
-mv keynote-demo-2013/aerogear vertx
-rm -rf keynote-demo-2013
-
 popd
