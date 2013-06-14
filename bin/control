@@ -1,0 +1,170 @@
+#!/bin/bash -e
+
+source $OPENSHIFT_CARTRIDGE_SDK_BASH
+
+vertx_BIN_DIR=${OPENSHIFT_VERTX_DIR}/bin
+vertx_PID_FILE=${OPENSHIFT_HOMEDIR}/app-root/runtime/vertx.pid
+
+cartridge_type="vertx"
+
+VERTX_BIN_DIR=${OPENSHIFT_VERTX_DIR}/bin
+VERTX_PID_FILE=${OPENSHIFT_HOMEDIR}/app-root/runtime/vertx.pid
+
+# Check if the jbossas process is running
+function isrunning() {
+    
+    # Check for running app
+    if [ -f "$VERTX_PID_FILE" ]; then
+      jbpid=$(cat $VERTX_PID_FILE);
+      if /bin/ps --pid $jbpid 1>&2 >/dev/null;
+      then
+        return 0
+      fi
+    fi
+   
+    return 1
+}
+
+# Kill the process given by $1 and its children
+killtree() {
+    local _pid=$1
+    for _child in $(ps -o pid --no-headers --ppid ${_pid}); do
+        killtree ${_child}
+    done
+
+    local should_be_gone_pid=$(ps -o pid -p ${_pid} --no-headers)
+    if [ -z $should_be_gone_pid ]; then
+        return
+    else
+        kill -TERM ${_pid}
+    fi
+
+    local count=0
+    while [ ${count} -lt 15 ]
+    do
+        local should_be_gone_pid=$(ps -o pid -p ${_pid} --no-headers)
+        if [ -z $should_be_gone_pid ]; then
+                return
+        else
+                sleep 2
+                let count=${count}+1
+        fi
+    done
+
+    local should_be_gone_pid=$(ps -o pid -p ${_pid} --no-headers)
+    if [ ! -z $should_be_gone_pid ]
+    then
+        kill -9 ${_pid}
+    fi
+}
+
+function stop() {
+  echo "Stopping $cartridge_type cart"
+  
+  if isrunning; then
+		if [ -f "$VERTX_PID_FILE" ]; then
+      pid=$(cat $VERTX_PID_FILE);
+      echo "Sending SIGTERM to jboss:$pid ..." 1>&2
+      killtree $pid
+    else 
+	    echo "Failed to locate JBOSS PID File" 1>&2
+	  fi
+  fi
+}
+
+function build() {
+    	
+    	if [ -z "$OPENSHIFT_VERTX_CLUSTER" ]; then
+    		OPENSHIFT_VERTX_CLUSTER="${OPENSHIFT_VERTX_IP}"
+    	fi
+    	
+    	cp ${OPENSHIFT_REPO_DIR}/vertx/vert.x-1.3.1.final/conf/cluster.xml $OPENSHIFT_VERTX_DIR/template/vertx/vert.x-1.3.1.final/conf/
+    	cp ${OPENSHIFT_REPO_DIR}/vertx/bin/run-vertx.sh $OPENSHIFT_VERTX_DIR/template/vertx/bin
+    	cp ${OPENSHIFT_REPO_DIR}/vertx/vert.x-1.3.1.final/bin/vertx $OPENSHIFT_VERTX_DIR/template/vertx/vert.x-1.3.1.final/bin
+    	cp ${OPENSHIFT_REPO_DIR}/vertx/web.js $OPENSHIFT_VERTX_DIR/template/vertx/
+    	cp ${OPENSHIFT_REPO_DIR}/vertx/web-handlers.js $OPENSHIFT_VERTX_DIR/template/vertx/
+    	
+    	#OPENSHIFT_VERTX_PROXY_IP=$(nslookup ${OPENSHIFT_GEAR_DNS} | awk '/^Address: / { print $2 ; exit }')
+    	OPENSHIFT_VERTX_PROXY_IP=$(ping -c 1 ${OPENSHIFT_GEAR_DNS} | awk '{ print $3 ; exit }' | sed 's/(//g' | sed 's/)//g')
+    	
+    	hostnames=
+    	for address in $OPENSHIFT_VERTX_CLUSTER; do
+        	hostnames="<hostname>$address<\/hostname>${hostnames}"
+		done
+    	
+    	AG_DIR=$(echo "$OPENSHIFT_VERTX_DIR" | sed -e "s@\/@\\\\/@g")
+    	 
+    	pushd $OPENSHIFT_VERTX_DIR/template/vertx
+  			sed -i -e "s/\${env.OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/${OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/g" \
+  					-e "s/\${env.OPENSHIFT_VERTX_PROXY_IP}/${OPENSHIFT_VERTX_PROXY_IP}/g" \
+  					-e "s/\${env.OPENSHIFT_VERTX_CLUSTER}/${hostnames}/g" \
+  					./vert.x-1.3.1.final/conf/cluster.xml
+  					
+  			sed -i -e "s/\${env.OPENSHIFT_VERTX_IP}/${OPENSHIFT_VERTX_IP}/g" \
+  					-e "s/\${env.OPENSHIFT_VERTX_PROXY_IP}/${OPENSHIFT_VERTX_PROXY_IP}/g" \
+  					-e "s/\${env.OPENSHIFT_VERTX_VERTX_PROXY_PORT}/${OPENSHIFT_VERTX_VERTX_PROXY_PORT}/g" \
+  					./bin/run-vertx.sh
+  				
+			sed -i -e "s/\${env.OPENSHIFT_VERTX_IP}/${OPENSHIFT_VERTX_IP}/g" \
+				-e "s/\${env.OPENSHIFT_VERTX_PROXY_IP}/${OPENSHIFT_VERTX_PROXY_IP}/g" \
+				-e "s/\${env.OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/${OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/g" \
+				./vert.x-1.3.1.final/bin/vertx
+				
+			sed -i -e "s/\${env.OPENSHIFT_VERTX_IP}/${OPENSHIFT_VERTX_IP}/g" ./web.js
+			
+			sed -i -e "s/\${env.OPENSHIFT_VERTX_DIR}/${AG_DIR}/g" ./web-handlers.js
+		popd
+		
+		pushd ${OPENSHIFT_VERTX_DIR}/template
+		
+			rm -rf vertx/aerogear
+		
+			git clone https://bdecoste:cyclone1@github.com/projectodd/keynote-demo-2013.git
+
+			mv keynote-demo-2013/aerogear vertx
+			rm -rf keynote-demo-2013
+
+		popd
+
+}
+
+function deploy() {
+	echo "Deploying JBoss"
+	
+	if [ "$(ls ${OPENSHIFT_REPO_DIR}/vertx/deployments)" ]; then
+		rsync -r --delete --exclude ".*" ${OPENSHIFT_REPO_DIR}/vertx/deployments/ ${OPENSHIFT_VERTX_DIR}/standalone/deployments/
+	else
+    rm -rf ${OPENSHIFT_VERTX_DIR}/standalone/deployments/*
+  fi
+}
+
+function start() {
+
+	build
+	#deploy
+
+	pushd ${OPENSHIFT_VERTX_DIR}/template/vertx
+		./bin/run-vertx.sh &
+		PROCESS_ID=$!
+    	echo "$PROCESS_ID" > ${VERTX_PID_FILE}
+	popd
+
+}
+
+function restart() {
+    echo "Restarting $cartridge_type cart"
+   
+  	stop
+  	
+  	start
+}
+
+case "$1" in
+  start)        start ;;
+  stop)			stop ;;
+  restart) 		restart ;;
+  *)            exit 0
+esac
+
+
+

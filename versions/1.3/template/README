@@ -1,0 +1,4 @@
+
+Run like:
+
+VERTX_HOME/bin/vertx run  ./server.js  -cluster -cluster-port 25502 -cluster-host 127.0.0.1

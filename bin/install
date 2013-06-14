@@ -1,0 +1,16 @@
+#!/bin/bash -eu
+
+version=1.3
+
+echo "$version" > "$OPENSHIFT_VERTX_DIR/env/OPENSHIFT_VERTX_VERSION"
+
+cp -r ${OPENSHIFT_VERTX_DIR}/versions/${version}/template/* ${OPENSHIFT_VERTX_DIR}/template
+
+pushd ${OPENSHIFT_VERTX_DIR}/template
+
+git clone https://bdecoste:cyclone1@github.com/projectodd/keynote-demo-2013.git
+
+mv keynote-demo-2013/aerogear vertx
+rm -rf keynote-demo-2013
+
+popd
