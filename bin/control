@@ -75,8 +75,9 @@ function stop() {
 function replace_envs {
     version=1.3
     
-	cp -r ${OPENSHIFT_VERTX_DIR}/versions/${version}/bin/* $OPENSHIFT_VERTX_DIR/bin
-	cp -r ${OPENSHIFT_VERTX_DIR}/versions/${version}/vert.x-1.3.1.final/* $OPENSHIFT_VERTX_DIR/vert.x-1.3.1.final
+	cp -r ${OPENSHIFT_VERTX_DIR}/versions/${version}/bin/run-vertx.sh $OPENSHIFT_VERTX_DIR/bin
+	cp -r ${OPENSHIFT_VERTX_DIR}/versions/${version}/vert.x-1.3.1.final/conf/cluster.xml $OPENSHIFT_VERTX_DIR/vert.x-1.3.1.final/conf
+	cp -r ${OPENSHIFT_VERTX_DIR}/versions/${version}/vert.x-1.3.1.final/bin/vertx $OPENSHIFT_VERTX_DIR/vert.x-1.3.1.final/bin
 	
 	if [ -z "$OPENSHIFT_VERTX_CLUSTER" ]; then
 		OPENSHIFT_VERTX_CLUSTER="${OPENSHIFT_VERTX_IP}"
