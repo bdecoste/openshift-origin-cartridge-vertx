@@ -73,7 +73,8 @@ function stop() {
 }
 
 function replace_envs {
-
+    version=1.3
+    
 	cp -r ${OPENSHIFT_VERTX_DIR}/versions/${version}/bin/* $OPENSHIFT_VERTX_DIR/bin
 	cp -r ${OPENSHIFT_VERTX_DIR}/versions/${version}/vert.x-1.3.1.final/* $OPENSHIFT_VERTX_DIR/vert.x-1.3.1.final
 	
