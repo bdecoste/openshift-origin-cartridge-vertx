@@ -72,7 +72,43 @@ function stop() {
   fi
 }
 
+function replace_envs {
+
+	cp -r ${OPENSHIFT_VERTX_DIR}/versions/${version}/bin/* $OPENSHIFT_VERTX_DIR/bin
+	cp -r ${OPENSHIFT_VERTX_DIR}/versions/${version}/vert.x-1.3.1.final/* $OPENSHIFT_VERTX_DIR/vert.x-1.3.1.final
+	
+	if [ -z "$OPENSHIFT_VERTX_CLUSTER" ]; then
+		OPENSHIFT_VERTX_CLUSTER="${OPENSHIFT_VERTX_IP}"
+	fi
+	
+	OPENSHIFT_VERTX_PROXY_IP=$(ping -c 1 ${OPENSHIFT_GEAR_DNS} | awk '{ print $3 ; exit }' | sed 's/(//g' | sed 's/)//g')
+	
+	hostnames=
+	for address in $OPENSHIFT_VERTX_CLUSTER; do
+		hostnames="<hostname>$address<\/hostname>${hostnames}"
+	done
+	
+	pushd $OPENSHIFT_VERTX_DIR
+		sed -i -e "s/\${env.OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/${OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/g" \
+				-e "s/\${env.OPENSHIFT_VERTX_PROXY_IP}/${OPENSHIFT_VERTX_PROXY_IP}/g" \
+				-e "s/\${env.OPENSHIFT_VERTX_CLUSTER}/${hostnames}/g" \
+				./vert.x-1.3.1.final/conf/cluster.xml
+				
+		sed -i -e "s/\${env.OPENSHIFT_VERTX_IP}/${OPENSHIFT_VERTX_IP}/g" \
+				-e "s/\${env.OPENSHIFT_VERTX_PROXY_IP}/${OPENSHIFT_VERTX_PROXY_IP}/g" \
+				-e "s/\${env.OPENSHIFT_VERTX_VERTX_PROXY_PORT}/${OPENSHIFT_VERTX_VERTX_PROXY_PORT}/g" \
+				./bin/run-vertx.sh
+			
+		sed -i -e "s/\${env.OPENSHIFT_VERTX_IP}/${OPENSHIFT_VERTX_IP}/g" \
+			-e "s/\${env.OPENSHIFT_VERTX_PROXY_IP}/${OPENSHIFT_VERTX_PROXY_IP}/g" \
+			-e "s/\${env.OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/${OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/g" \
+			./vert.x-1.3.1.final/bin/vertx
+	popd
+}
+
 function start() {
+
+    replace_envs
 
 	pushd ${OPENSHIFT_VERTX_DIR}/template
 		../bin/run-vertx.sh > ${OPENSHIFT_TMP_DIR}/${cartridge_type}.log 2>&1 &

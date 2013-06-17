@@ -28,23 +28,8 @@ if [ -z "$OPENSHIFT_VERTX_VERTX_PROXY_PORT" ]; then
 fi
  
 pushd $OPENSHIFT_VERTX_DIR
-	sed -i -e "s/\${env.OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/${OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/g" \
-			-e "s/\${env.OPENSHIFT_VERTX_PROXY_IP}/${OPENSHIFT_VERTX_PROXY_IP}/g" \
-			-e "s/\${env.OPENSHIFT_VERTX_CLUSTER}/${hostnames}/g" \
-			./vert.x-1.3.1.final/conf/cluster.xml
-			
 	sed -i -e "s/\${env.OPENSHIFT_VERTX_LOG_DIR}/${LOG_DIR}/g" \
 			./vert.x-1.3.1.final/conf/logging.properties
-			
-	sed -i -e "s/\${env.OPENSHIFT_VERTX_IP}/${OPENSHIFT_VERTX_IP}/g" \
-			-e "s/\${env.OPENSHIFT_VERTX_PROXY_IP}/${OPENSHIFT_VERTX_PROXY_IP}/g" \
-			-e "s/\${env.OPENSHIFT_VERTX_VERTX_PROXY_PORT}/${OPENSHIFT_VERTX_VERTX_PROXY_PORT}/g" \
-			./bin/run-vertx.sh
-		
-	sed -i -e "s/\${env.OPENSHIFT_VERTX_IP}/${OPENSHIFT_VERTX_IP}/g" \
-		-e "s/\${env.OPENSHIFT_VERTX_PROXY_IP}/${OPENSHIFT_VERTX_PROXY_IP}/g" \
-		-e "s/\${env.OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/${OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/g" \
-		./vert.x-1.3.1.final/bin/vertx
 		
 	sed -i -e "s/\${env.OPENSHIFT_VERTX_IP}/${OPENSHIFT_VERTX_IP}/g" ./template/web.js
 	
