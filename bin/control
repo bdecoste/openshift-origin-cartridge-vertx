@@ -75,7 +75,7 @@ function stop() {
 function start() {
 
 	pushd ${OPENSHIFT_VERTX_DIR}
-		./bin/run-vertx.sh &
+		./bin/run-vertx.sh > ${OPENSHIFT_TMP_DIR}/${cartridge_type}.log 2>&1 &
 		PROCESS_ID=$!
     	echo "$PROCESS_ID" > ${VERTX_PID_FILE}
 	popd

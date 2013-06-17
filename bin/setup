@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
 mkdir -p ${OPENSHIFT_HOMEDIR}/.m2
-mkdir -p ${OPENSHIFT_VERTX_DIR}/{bin,template,vert.x-1.3.1.final}
+mkdir -p ${OPENSHIFT_VERTX_DIR}/{bin,template,vert.x-1.3.1.final,logs}
 
 case "$1" in
   -v|--version)
