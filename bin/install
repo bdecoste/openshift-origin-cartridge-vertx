@@ -22,6 +22,10 @@ done
 AG_DIR=$(echo "$OPENSHIFT_VERTX_DIR" | sed -e "s@\/@\\\\/@g")
 
 LOG_DIR=$(echo "$OPENSHIFT_VERTX_LOG_DIR" | sed -e "s@\/@\\\\/@g")
+
+if [ -z "$OPENSHIFT_VERTX_VERTX_PROXY_PORT ]; then
+	OPENSHIFT_VERTX_VERTX_PROXY_PORT=7600
+fi
  
 pushd $OPENSHIFT_VERTX_DIR
 	sed -i -e "s/\${env.OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/${OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/g" \
