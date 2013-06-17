@@ -16,55 +16,9 @@
  */
 var eb = vertx.eventBus;
 
-var client = vertx.createHttpClient();
-client.setPort( 8080 );
-
-client.setHost(java.lang.System.getProperty('torqueboxHost') || 'bam.keynote.projectodd.org');
-
-var redirectIfHttpsOrWww = function(request) {
-  var hostHeader = request.headers()['x-forwarded-host'];
-  if ( ! hostHeader ) {
-    hostHeader = request.headers()['host'];
-  }
-  var redirect = false;
-
-  if ( hostHeader ) {
-    var colonLoc = hostHeader.indexOf( ':' );
-    var host;
-    if ( colonLoc < 0 ) {
-      host = hostHeader;
-    } else {
-      host = hostHeader.substring( 0, colonLoc );
-    }
-
-    if ( host != 'jbosskeynote.com' ) {
-      redirect = true;
-    }
- 
-    var forwardedProto = request.headers()['x-forwarded-proto'];
-    if ( forwardedProto == 'https' ) {
-      redirect = true;
-    }
-  } else {
-    redirect = true;
-  }
-  
-  if ( redirect ) {
-    request.response.statusCode = 301;
-    request.response.putHeader( 'location', 'http://jbosskeynote.com' + request.uri );
-    request.response.end();
-    return true;
-  }
-
-  return false;
-};
-
 var demoHandlers = {
   putRequestOnEventBus: function(address, mockData) {
     return function(request) {
-    if ( redirectIfHttpsOrWww( request ) ) {
-        return;
-      }
 
       request.bodyHandler( function(body) {
         eb.publish( address, body.toString() );
@@ -75,9 +29,6 @@ var demoHandlers = {
   },
 
   proxyRequest: function(request) {
-    if ( redirectIfHttpsOrWww( request ) ) {
-        return;
-    }
     var proxyRequest = client.get( request.uri, function(proxyResponse) {
       request.response.putHeader( "content-length", proxyResponse.headers()[ "content-length" ] );
       var p = new vertx.Pump(proxyResponse, request.response);
@@ -88,14 +39,10 @@ var demoHandlers = {
   },
 
   serveFile: function(request) {
-    if ( redirectIfHttpsOrWww( request ) ) {
-        return;
-    }
     var basename = request.params().param0;
     if ( basename === '' ) {
       basename = 'index.html';
     }
-    var filename = '${env.OPENSHIFT_VERTX_DIR}/template/vertx/aerogear/client/dist/' + basename;
 
     request.response.putHeader( "Cache-Control", "max-age=3600" ).sendFile( filename );
   },
