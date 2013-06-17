@@ -39,10 +39,7 @@ var demoHandlers = {
   },
 
   serveFile: function(request) {
-    var basename = request.params().param0;
-    if ( basename === '' ) {
-      basename = 'index.html';
-    }
+    filename = "index.html";
 
     request.response.putHeader( "Cache-Control", "max-age=3600" ).sendFile( filename );
   },
