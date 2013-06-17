@@ -20,6 +20,8 @@ for address in $OPENSHIFT_VERTX_CLUSTER; do
 done
 
 AG_DIR=$(echo "$OPENSHIFT_VERTX_DIR" | sed -e "s@\/@\\\\/@g")
+
+LOG_DIR=$(echo "$OPENSHIFT_VERTX_LOG_DIR" | sed -e "s@\/@\\\\/@g")
  
 pushd $OPENSHIFT_VERTX_DIR
 	sed -i -e "s/\${env.OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/${OPENSHIFT_VERTX_CLUSTER_PROXY_PORT}/g" \
@@ -27,7 +29,7 @@ pushd $OPENSHIFT_VERTX_DIR
 			-e "s/\${env.OPENSHIFT_VERTX_CLUSTER}/${hostnames}/g" \
 			./vert.x-1.3.1.final/conf/cluster.xml
 			
-	sed -i -e "s/\${env.OPENSHIFT_VERTX_LOG_DIR}/${OPENSHIFT_VERTX_LOG_DIR}/g" \
+	sed -i -e "s/\${env.OPENSHIFT_VERTX_LOG_DIR}/${LOG_DIR}/g" \
 			./vert.x-1.3.1.final/conf/logging.properties
 			
 	sed -i -e "s/\${env.OPENSHIFT_VERTX_IP}/${OPENSHIFT_VERTX_IP}/g" \
