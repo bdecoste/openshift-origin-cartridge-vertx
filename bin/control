@@ -74,7 +74,7 @@ function stop() {
 
 function start() {
 
-	pushd ${OPENSHIFT_VERTX_DIR}/template/vertx
+	pushd ${OPENSHIFT_VERTX_DIR}
 		./bin/run-vertx.sh &
 		PROCESS_ID=$!
     	echo "$PROCESS_ID" > ${VERTX_PID_FILE}
